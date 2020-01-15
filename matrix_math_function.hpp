@@ -2714,5 +2714,6 @@ typedef calculate::matrix::Matrix<uint8_t> ImageMatrix;
 typedef calculate::random::Random<uint8_t> ImageRandom;
 typedef calculate::activator::Activator<uint8_t> ImageActivator;
 
+// fwelkgrwg
 
 #endif    //CALCULATE_MATRIX_HPP_
