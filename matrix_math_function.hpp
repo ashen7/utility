@@ -267,6 +267,16 @@ struct Matrix {
                                  const Matrix2d& source_matrix, 
                                  Matrix2d& result_matrix);
 
+    // 一个2d矩阵 同除以 一个值
+    static int8_t MatrixDivValue(const Matrix2d& source_matrix, 
+                                 DataType value, 
+                                 Matrix2d& result_matrix);
+
+    // 一个3d矩阵 同除以 一个值
+    static int8_t MatrixDivValue(const Matrix3d& source_matrix, 
+                                 DataType value, 
+                                 Matrix3d& result_matrix);
+
     // 计算2d矩阵的和
     static double Sum(const std::vector<std::vector<uint8_t>>& source_matrix);
 
@@ -2146,6 +2156,69 @@ int8_t Matrix<DataType>::ValueSubMatrix(DataType value,
 
     return 0;
 }
+
+//2d矩阵都除以一个值
+template <typename DataType>
+int8_t Matrix<DataType>::MatrixDivValue(const Matrix2d& source_matrix, 
+                                        DataType value, 
+                                        Matrix2d& result_matrix) {
+    //check源矩阵
+    if (!MatrixCheck(source_matrix, true)) {
+        LOG(ERROR) << "value mul matrix failed";
+        return -1;
+    }
+
+    //check结果矩阵
+    if (!MatrixCheck(source_matrix, result_matrix, false)) {
+        result_matrix.clear();
+        result_matrix = source_matrix;
+    }
+    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < source_matrix.size(); i++) {
+            for (int j = 0; j < source_matrix[i].size(); j++) {
+                result_matrix[i][j] = source_matrix[i][j] / value;
+            }
+        }
+    }
+
+    return 0;
+}
+
+//3d矩阵都除以一个值
+template <typename DataType>
+int8_t Matrix<DataType>::MatrixDivValue(const Matrix3d& source_matrix, 
+                                        DataType value, 
+                                        Matrix3d& result_matrix) {
+    //check源矩阵
+    if (!MatrixCheck(source_matrix, true)) {
+        LOG(ERROR) << "value mul matrix failed";
+        return -1;
+    }
+
+    //check结果矩阵
+    if (!MatrixCheck(source_matrix, result_matrix, false)) {
+        result_matrix.clear();
+        result_matrix = source_matrix;
+    }
+    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < source_matrix.size(); i++) {
+            for (int j = 0; j < source_matrix[i].size(); j++) {
+                for (int k = 0; k < source_matrix[i][j].size(); k++) {
+                    result_matrix[i][j][k] = source_matrix[i][j][k] / value;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 
 //计算2d矩阵的和
 template <typename DataType>
