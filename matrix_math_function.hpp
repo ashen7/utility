@@ -41,11 +41,11 @@
 
 #define OPENMP_THREADS_NUMBER 6   //openmp并行线程数量
 
+
 //模板类 
 //模板类有一层命名空间  
 namespace calculate {
 namespace matrix {
-
 template <typename DataType=double>
 struct Matrix {
     //类型别名
@@ -53,6 +53,7 @@ struct Matrix {
     typedef std::vector<DataType> Matrix1d;
     typedef std::vector<std::vector<DataType>> Matrix2d;
     typedef std::vector<std::vector<std::vector<DataType>>> Matrix3d;
+    typedef std::vector<std::vector<std::vector<std::vector<DataType>>>> Matrix4d;
     
     // 检查2d矩阵行列是否正确 结果矩阵不打印日志 源矩阵打印 
     static bool MatrixCheck(const std::vector<std::vector<uint8_t>>& matrix, 
@@ -295,6 +296,10 @@ struct Matrix {
     // 得到2d矩阵的最大值所在的行 列 索引 
     static std::tuple<int32_t, int32_t> GetMaxIndex(const Matrix2d& source_matrix);
 
+    // 得到2d矩阵中值为0的所有索引
+    static int8_t GetZeroIndex(const Matrix2d& source_matrix, 
+                               std::vector<std::tuple<int32_t, int32_t>>& result_matrix);
+
     // 计算均方误差
     static double MeanSquareError(const Matrix2d& output_matrix, 
                                   const Matrix2d& label);
@@ -309,6 +314,32 @@ struct Matrix {
                          int32_t x, int32_t y, 
                          int32_t height, int32_t width, 
                          Matrix3d& result_matrix);
+
+    //将源2d矩阵copy到结果矩阵
+    static int8_t CopyTo(const Matrix2d& source_matrix, 
+                         int32_t& index, 
+                         std::shared_ptr<double> result_matrix);
+
+    //将源3d矩阵copy到结果矩阵
+    static int8_t CopyTo(const Matrix3d& source_matrix, 
+                         int32_t& index, 
+                         std::shared_ptr<double> result_matrix);
+
+    //将源矩阵copy到结果矩阵
+    static int8_t CopyTo(std::shared_ptr<double> source_matrix, 
+                         int32_t start_index, int32_t fc_layers_number, 
+                         int32_t fc5_input_node, int32_t fc5_output_node, 
+                         int32_t fc6_output_node, 
+                         Matrix3d& weights_matrix, 
+                         Matrix3d& biases_matrix);
+
+    //将源矩阵copy到结果矩阵
+    static int8_t CopyTo(std::shared_ptr<double> source_matrix, 
+                         int32_t start_index, int32_t& end_index,  
+                         int32_t filter_number, int32_t channel_number, 
+                         int32_t filter_height, int32_t filter_width, 
+                         Matrix4d& weights_matrix, 
+                         Matrix1d& biases_matrix);
 
     //得到2d矩阵的ROI
     static int8_t GetROI(const std::vector<std::vector<uint8_t>>& source_matrix, 
@@ -383,7 +414,7 @@ struct Matrix {
                                      int32_t filter_width, 
                                      int32_t stride, 
                                      Matrix2d& result_matrix); 
-    
+
     
 
 
@@ -2351,7 +2382,7 @@ template <typename DataType>
 std::tuple<int32_t, int32_t> Matrix<DataType>::GetMaxIndex(const Matrix2d& source_matrix) {
     //check源矩阵
     if (!MatrixCheck(source_matrix, true)) {
-        LOG(ERROR) << "get matrix max failed";
+        LOG(ERROR) << "get matrix max index failed";
         return std::make_tuple(-1, -1);
     }
 
@@ -2370,6 +2401,33 @@ std::tuple<int32_t, int32_t> Matrix<DataType>::GetMaxIndex(const Matrix2d& sourc
     }
 
     return std::make_tuple(rows, cols);
+}
+
+// 得到2d矩阵中值为0的所有索引
+template <typename DataType>
+int8_t Matrix<DataType>::GetZeroIndex(const Matrix2d& source_matrix, 
+                                      std::vector<std::tuple<int32_t, int32_t>>& result_matrix) {
+    //check源矩阵
+    if (!MatrixCheck(source_matrix, true)) {
+        LOG(ERROR) << "get matrix zero index failed";
+        return -1;
+    }
+    
+    if (0 != result_matrix.size()) {
+        result_matrix.clear();
+    }
+    
+    result_matrix.reserve(static_cast<int>(source_matrix.size() * source_matrix[0].size() / 2));
+    for (int i = 0; i < source_matrix.size(); i++) {
+        for (int j = 0; j < source_matrix[i].size(); j++) {
+            if (0 == source_matrix[i][j]) {
+                //emplace 用参数构造元素 直接调用构造函数生成
+                result_matrix.emplace_back(i, j);
+            }
+        }
+    }
+
+    return 0;
 }
 
 
@@ -2524,6 +2582,152 @@ int8_t Matrix<DataType>::CopyTo(const Matrix3d& source_matrix,
 
     return 0;
 }    
+
+//将源矩阵copy到结果矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::CopyTo(const Matrix2d& source_matrix, 
+                                int32_t& index, 
+                                std::shared_ptr<double> result_matrix) {
+    //check source matrix 
+    if (!MatrixCheck(source_matrix, true)) {
+       LOG(ERROR) << "matrix copy failed, input source matrix is wrong";
+       return -1;
+    }
+    
+    for (int i = 0; i < source_matrix.size(); i++) {
+        for (int j = 0; j < source_matrix[i].size(); j++) {
+            result_matrix.get()[index++] = source_matrix[i][j];
+        }
+    }
+
+    return 0;
+}
+
+//将源矩阵copy到结果矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::CopyTo(const Matrix3d& source_matrix, 
+                                int32_t& index, 
+                                std::shared_ptr<double> result_matrix) {
+    //check source matrix 
+    if (!MatrixCheck(source_matrix, true)) {
+       LOG(ERROR) << "matrix copy failed, input source matrix is wrong";
+       return -1;
+    }
+    
+    for (int i = 0; i < source_matrix.size(); i++) {
+        for (int j = 0; j < source_matrix[i].size(); j++) {
+            for (int k = 0; k < source_matrix[i][j].size(); k++) {
+                result_matrix.get()[index++] = source_matrix[i][j][k];
+            }
+        }
+    }
+
+    return 0;
+}
+
+//将源矩阵copy到结果矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::CopyTo(std::shared_ptr<double> source_matrix, 
+                                int32_t start_index, int32_t fc_layers_number, 
+                                int32_t fc5_input_node, int32_t fc5_output_node, 
+                                int32_t fc6_output_node, 
+                                Matrix3d& weights_matrix,
+                                Matrix3d& biases_matrix) {
+    if (fc_layers_number <= 0) {
+        LOG(ERROR) << "matrix copy failed, input fc layers number <= 0";
+        return -1;
+    }
+    if (fc5_input_node <= 0) {
+        LOG(ERROR) << "matrix copy failed, fc input node <= 0";
+        return -1;
+    }
+    if (fc5_output_node <= 0) {
+        LOG(ERROR) << "matrix copy failed, fc output node <= 0";
+        return -1;
+    }
+    if (fc6_output_node <= 0) {
+        LOG(ERROR) << "matrix copy failed, fc output node <= 0";
+        return -1;
+    }
+    
+    weights_matrix.clear();
+    weights_matrix.reserve(fc_layers_number);
+    biases_matrix.clear();
+    biases_matrix.reserve(fc_layers_number);
+    Matrix2d data1(fc5_output_node, Matrix1d(fc5_input_node));
+    Matrix2d data2(fc5_output_node, Matrix1d(1));
+    Matrix2d data3(fc6_output_node, Matrix1d(fc5_output_node));
+    Matrix2d data4(fc6_output_node, Matrix1d(1));
+    for (int i = 0; i < fc5_output_node; i++) {
+        for (int j = 0; j < fc5_input_node; j++) {
+            data1[i][j] = source_matrix.get()[start_index++];
+        }
+    }
+    for (int i = 0; i < fc5_output_node; i++) {
+        for (int j = 0; j < 1; j++) {
+            data2[i][j] = source_matrix.get()[start_index++];
+        }
+    }
+    for (int i = 0; i < fc6_output_node; i++) {
+        for (int j = 0; j < fc5_output_node; j++) {
+            data3[i][j] = source_matrix.get()[start_index++];
+        }
+    }
+    for (int i = 0; i < fc6_output_node; i++) {
+        for (int j = 0; j < 1; j++) {
+            data4[i][j] = source_matrix.get()[start_index++];
+        }
+    }
+    weights_matrix.push_back(data1);
+    biases_matrix.push_back(data2);
+    weights_matrix.push_back(data3);
+    biases_matrix.push_back(data4);
+
+    return 0;
+}
+
+//将源矩阵copy到结果矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::CopyTo(std::shared_ptr<double> source_matrix, 
+                                int32_t start_index, int32_t& end_index,  
+                                int32_t filter_number, int32_t channel_number, 
+                                int32_t filter_height, int32_t filter_width, 
+                                Matrix4d& weights_matrix, 
+                                Matrix1d& biases_matrix) {
+    if (filter_number <= 0) {
+        LOG(ERROR) << "matrix copy failed, input filter number <= 0";
+        return -1;
+    }
+    if (channel_number <= 0) {
+        LOG(ERROR) << "matrix copy failed, input channel number <= 0";
+        return -1;
+    }
+    if (filter_height <= 0) {
+        LOG(ERROR) << "matrix copy failed, input filter height <= 0";
+        return -1;
+    }
+    if (filter_width <= 0) {
+        LOG(ERROR) << "matrix copy failed, input filter width <= 0";
+        return -1;
+    }
+
+    weights_matrix = Matrix4d(filter_number, Matrix3d(channel_number, 
+                              Matrix2d(filter_height, Matrix1d(filter_width))));
+    biases_matrix = Matrix1d(filter_number);
+    for (int i = 0; i < filter_number; i++) {
+        for (int j = 0; j < channel_number; j++) {
+            for (int k = 0; k < filter_height; k++) {
+                for (int z = 0; z < filter_width; z++) {
+                    weights_matrix[i][j][k][z] = source_matrix.get()[start_index++];
+                }
+            }
+        }
+        biases_matrix[i] = source_matrix.get()[start_index++];
+    }
+    
+    end_index = start_index;
+    return 0;
+}
 
 //得到2d矩阵的ROI   源矩阵是大矩阵  结果矩阵是取其roi小矩阵
 template <typename DataType>
@@ -3309,9 +3513,6 @@ int8_t Matrix<DataType>::MaxPoolingBackward(const Matrix2d& source_matrix,
 
 
 
-
-
-
 }       //namespace matrix
 
 
@@ -3335,25 +3536,55 @@ struct Random {
     static int8_t Normal(float mean, float stddev, int32_t rows, int32_t cols, 
                          Matrix2d& random_matrix);
 
-    //生成随机的浮点数二维矩阵
+    //生成服从均匀分布的随机浮点数二维矩阵
     static int8_t Uniform(float a, float b, int32_t rows, int32_t cols, 
                           Matrix2d& random_matrix);
 
-    //生成随机的浮点数三维矩阵
+    //生成服从均匀分布的随机浮点数三维矩阵
     static int8_t Uniform(float a, float b, int32_t channel_number, 
                           int32_t height, int32_t width, 
                           Matrix3d& random_matrix);
 
-    //生成随机的整数二维矩阵
+    //生成服从均匀分布的随机整数二维矩阵
     static int8_t RandInt(float a, float b, int32_t rows, int32_t cols, 
                           Matrix2d& random_matrix);
 
-    //生成随机的整数三维矩阵
+    //生成服从均匀分布的随机整数三维矩阵
     static int8_t RandInt(float a, float b, int32_t channel_number,
                           int32_t height, int32_t width, 
                           Matrix3d& random_matrix);
 
+    //生成服从二项分布的随机数二维矩阵 
+    static int8_t Binomial(int32_t experiment_times, float probability, 
+                           int32_t rows, int32_t cols, 
+                           Matrix2d& random_matrix);
+
+    //生成服从二项分布的随机数二维矩阵 
+    static int8_t Binomial(int32_t experiment_times, float probability, 
+                           std::tuple<int32_t, int32_t> shape, 
+                           Matrix2d& random_matrix);
+
+    //生成服从二项分布的随机数三维矩阵
+    static int8_t Binomial(int32_t experiment_times, float probability,
+                           int32_t channel_number, int32_t height, int32_t width, 
+                           Matrix3d& random_matrix);
+
+    //生成服从二项分布的随机数三维矩阵
+    static int8_t Binomial(int32_t experiment_times, float probability,
+                           std::tuple<int32_t, int32_t, int32_t> shape, 
+                           Matrix3d& random_matrix);
+
+    //全连接层的隐藏层 训练时使用dropout 防止过拟合
+    //dropout过程相当于对很多不同的神经网络取平均 不同网络产生不同的过拟合 相互抵消
+    static int8_t DropOut(const Matrix2d& source_matrix, 
+                          int32_t experiment_times, float probability, 
+                          Matrix2d& binomial_matrix, 
+                          Matrix2d& result_matrix);
+    
+
+
 };   //struct Random
+
 
 //生成服从正态分布的随机数二维矩阵
 template <typename DataType>
@@ -3387,10 +3618,12 @@ int8_t Random<DataType>::Normal(float mean, float stddev, int32_t rows, int32_t 
         }
         random_matrix.push_back(random_array);
     }
+
+    return 0;
 }
 
 
-//生成一个 rows * cols的随机数二维矩阵 值的范围在a 到 b之间 
+//生成服从均匀分布的随机浮点数二维矩阵
 template <typename DataType>
 int8_t Random<DataType>::Uniform(float a, float b, int32_t rows, int32_t cols, 
                                  Matrix2d& random_matrix) {
@@ -3430,7 +3663,7 @@ int8_t Random<DataType>::Uniform(float a, float b, int32_t rows, int32_t cols,
     return 0;
 }
 
-//生成一个 rows * cols的随机数三维矩阵 值的范围在a 到 b之间 
+//生成服从均匀分布的随机浮点数三维矩阵
 template <typename DataType>
 int8_t Random<DataType>::Uniform(float a, float b, int32_t channel_number, 
                                  int32_t height, int32_t width, 
@@ -3474,7 +3707,7 @@ int8_t Random<DataType>::Uniform(float a, float b, int32_t channel_number,
     return 0;
 }
 
-//生成一个随机整数二维矩阵
+//生成服从均匀分布的随机整数二维矩阵
 template <typename DataType>
 int8_t Random<DataType>::RandInt(float a, float b, int32_t rows, int32_t cols,  
                                  Matrix2d& random_matrix) {
@@ -3514,7 +3747,7 @@ int8_t Random<DataType>::RandInt(float a, float b, int32_t rows, int32_t cols,
     return 0;
 }
 
-//生成一个随机整数三维矩阵
+//生成服从均匀分布的随机整数三维矩阵
 template <typename DataType>
 int8_t Random<DataType>::RandInt(float a, float b, int32_t channel_number, 
                                  int32_t height, int32_t width, 
@@ -3559,9 +3792,232 @@ int8_t Random<DataType>::RandInt(float a, float b, int32_t channel_number,
 }
 
 
+//生成服从二项分布的随机数二维矩阵 
+template <typename DataType>
+int8_t Random<DataType>::Binomial(int32_t experiment_times, float probability, 
+                                  int32_t rows, int32_t cols, 
+                                  Matrix2d& random_matrix) {
+    if (rows <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input rows <= 0";
+        return -1;
+    }
+    if (cols <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input cols <= 0";
+        return -1;
+    }
+    if (experiment_times <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input experiment times <= 0";
+        return -1;
+    }
+    if (probability <= 0
+            || probability >= 1) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input probability <= 0 or >= 1";
+        return -1;
+    }
+    
+    //判断输出矩阵是否初始化过
+    if (0 != random_matrix.size()) {
+        random_matrix.clear();
+    }
 
+    random_matrix.reserve(rows);
+    
+    std::random_device rand_device;
+    //static std::mt19937 gen(rand_device());
+    std::default_random_engine random_engine(rand_device());
+    std::binomial_distribution<int> generate_random(experiment_times, probability);
+    for (int i = 0; i < rows; i++) {
+        std::vector<DataType> random_array;
+        random_array.reserve(cols);
+        for (int j = 0; j < cols; j++) {
+            random_array.push_back(generate_random(random_engine));
+        }
+        random_matrix.push_back(random_array);
+    }
 
+    return 0;
+}
 
+//生成服从二项分布的随机数二维矩阵 
+template <typename DataType>
+int8_t Random<DataType>::Binomial(int32_t experiment_times, float probability, 
+                                  std::tuple<int32_t, int32_t> shape,  
+                                  Matrix2d& random_matrix) {
+    int rows;
+    int cols;
+    std::tie(rows, cols) = shape;
+    if (rows <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input rows <= 0";
+        return -1;
+    }
+    if (cols <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input cols <= 0";
+        return -1;
+    }
+    if (experiment_times <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input experiment times <= 0";
+        return -1;
+    }
+    if (probability <= 0
+            || probability >= 1) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input probability <= 0 or >= 1";
+        return -1;
+    }
+    
+    //判断输出矩阵是否初始化过
+    if (0 != random_matrix.size()) {
+        random_matrix.clear();
+    }
+
+    random_matrix.reserve(rows);
+    
+    std::random_device rand_device;
+    //static std::mt19937 gen(rand_device());
+    std::default_random_engine random_engine(rand_device());
+    std::binomial_distribution<int> generate_random(experiment_times, probability);
+    for (int i = 0; i < rows; i++) {
+        std::vector<DataType> random_array;
+        random_array.reserve(cols);
+        for (int j = 0; j < cols; j++) {
+            random_array.push_back(generate_random(random_engine));
+        }
+        random_matrix.push_back(random_array);
+    }
+
+    return 0;
+}
+
+//生成服从二项分布的随机数三维矩阵 
+template <typename DataType>
+int8_t Random<DataType>::Binomial(int32_t experiment_times, float probability, 
+                                  int32_t channel_number, int32_t height, int32_t width,  
+                                  Matrix3d& random_matrix) {
+    if (channel_number <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input channel number <= 0";
+        return -1;
+    }
+    if (height <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input height <= 0";
+        return -1;
+    }
+    if (width <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input width <= 0";
+        return -1;
+    }
+    if (experiment_times <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input experiment times <= 0";
+        return -1;
+    }
+    if (probability <= 0
+            || probability >= 1) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input probability <= 0 or >= 1";
+        return -1;
+    }
+    
+    //判断输出矩阵是否初始化过
+    if (0 != random_matrix.size()) {
+        random_matrix.clear();
+    }
+
+    random_matrix = Matrix3d(channel_number, Matrix2d(height, Matrix1d(width)));
+    
+    std::random_device rand_device;
+    //static std::mt19937 gen(rand_device());
+    std::default_random_engine random_engine(rand_device());
+    std::binomial_distribution<int> generate_random(experiment_times, probability);
+    for (int i = 0; i < channel_number; i++) {
+        for (int j = 0; j < height; j++) {
+            for (int k = 0; k < width; k++) {
+                random_matrix[i][j][k] = generate_random(random_engine);
+            }
+        }
+    }
+
+    return 0;
+}
+
+//生成服从二项分布的随机数三维矩阵 
+template <typename DataType>
+int8_t Random<DataType>::Binomial(int32_t experiment_times, float probability, 
+                                  std::tuple<int32_t, int32_t, int32_t> shape,  
+                                  Matrix3d& random_matrix) {
+    int channel_number;
+    int height;
+    int width;
+    std::tie(channel_number, height, width) = shape;
+    if (channel_number <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input channel number <= 0";
+        return -1;
+    }
+    if (height <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input height <= 0";
+        return -1;
+    }
+    if (width <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input width <= 0";
+        return -1;
+    }
+    if (experiment_times <= 0) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input experiment times <= 0";
+        return -1;
+    }
+    if (probability <= 0
+            || probability >= 1) {
+        LOG(ERROR) << "get binomial distribution matrix failed, input probability <= 0 or >= 1";
+        return -1;
+    }
+    
+    //判断输出矩阵是否初始化过
+    if (0 != random_matrix.size()) {
+        random_matrix.clear();
+    }
+
+    random_matrix = Matrix3d(channel_number, Matrix2d(height, Matrix1d(width)));
+    
+    std::random_device rand_device;
+    //static std::mt19937 gen(rand_device());
+    std::default_random_engine random_engine(rand_device());
+    std::binomial_distribution<int> generate_random(experiment_times, probability);
+    for (int i = 0; i < channel_number; i++) {
+        for (int j = 0; j < height; j++) {
+            for (int k = 0; k < width; k++) {
+                random_matrix[i][j][k] = generate_random(random_engine);
+            }
+        }
+    }
+
+    return 0;
+}
+
+//全连接层的隐藏层 训练时使用dropout 防止过拟合
+//dropout过程相当于对很多不同的神经网络取平均 不同网络产生不同的过拟合 相互抵消
+template <typename DataType>
+int8_t Random<DataType>::DropOut(const Matrix2d& source_matrix, 
+                                 int32_t experiment_times, float probability, 
+                                 Matrix2d& binomial_matrix, 
+                                 Matrix2d& result_matrix) {
+    //伯努利分布 得到0 1数组 
+    if (-1 == Binomial(experiment_times, probability,
+                       matrix::Matrix<double>::GetShape(source_matrix), binomial_matrix)) {
+        LOG(ERROR) << "Drop Out failed, binomial distribution occur error";
+        return -1;
+    }
+    
+    //相乘 矩阵中就有一部分参数置0了
+    if (-1 == matrix::Matrix<double>::HadamarkProduct(source_matrix, binomial_matrix, result_matrix)) {
+        LOG(ERROR) << "Drop Out failed, matrix hadamark product occur error";
+        return -1;
+    }
+    
+    //对所有激活值rescale 乘以1/(1-p) 因为有些值置0了 缩放一下总期望才能是一样的
+    float rescale = 1.0 / (1.0 - probability);
+    if (-1 == matrix::Matrix<double>::ValueMulMatrix(rescale, result_matrix, result_matrix)) {
+        LOG(ERROR) << "Drop Out failed, matrix rescale occur error";
+        return -1;
+    }
+
+    return 0;
+}
 
 
 
@@ -3623,6 +4079,10 @@ struct Activator {
     //ReLu激活函数的前向计算
     static void ReLuForward3d(const Matrix3d& input_array, 
                               Matrix3d& output_array);
+
+    //ReLu激活函数的反向计算
+    static void ReLuBackward2d(const Matrix2d& input_array, 
+                               Matrix2d& output_array);
 
     //ReLu激活函数的反向计算
     static void ReLuBackward3d(const Matrix3d& input_array, 
@@ -3748,6 +4208,36 @@ void Activator<DataType>::ReLuForward3d(const Matrix3d& input_array,
             for (int j = 0; j < input_array[i].size(); j++) {
                 for (int k = 0; k < input_array[i][j].size(); k++) {
                     output_array[i][j][k] = std::max<double>(0.0, input_array[i][j][k]);
+                }
+            }
+        }
+    }
+}
+
+//ReLu激活函数的2d反向计算
+template <typename DataType>
+void Activator<DataType>::ReLuBackward2d(const Matrix2d& input_array, 
+                                         Matrix2d& output_array) {
+    if (!matrix::Matrix<double>::MatrixCheck(input_array, true)) {
+        LOG(ERROR) << "relu backward activator failed, input array is empty";
+        return ;
+    }
+
+    if (!matrix::Matrix<double>::MatrixCheck(input_array, output_array, false)) {
+        output_array.clear();
+        output_array = input_array;
+    }
+
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        //大于0就是1 其余是0
+        for (int i = 0; i < input_array.size(); i++) {
+            for (int j = 0; j < input_array[i].size(); j++) {
+                if (input_array[i][j] > 0) {
+                    output_array[i][j] = 1;
+                } else {
+                    output_array[i][j] = 0;
                 }
             }
         }
