@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  matrix.hpp
+ *       Filename:  matrix_cpu.hpp
  *
  *    Description:  
  *
@@ -16,8 +16,8 @@
  * =====================================================================================
  */
 
-#ifndef CALCULATE_MATRIX_HPP_
-#define CALCULATE_MATRIX_HPP_
+#ifndef CALCULATE_MATRIX_CPU_HPP_
+#define CALCULATE_MATRIX_CPU_HPP_
 
 #include <time.h>
 #include <math.h>
@@ -55,6 +55,10 @@ struct Matrix {
     typedef std::vector<std::vector<std::vector<DataType>>> Matrix3d;
     typedef std::vector<std::vector<std::vector<std::vector<DataType>>>> Matrix4d;
     
+    // 检查1d矩阵是否正确
+    static bool MatrixCheck(const Matrix1d& left_matrix, 
+                            bool is_write_logging);
+
     // 检查2d矩阵行列是否正确 结果矩阵不打印日志 源矩阵打印 
     static bool MatrixCheck(const std::vector<std::vector<uint8_t>>& matrix, 
                             bool is_write_logging);
@@ -168,6 +172,9 @@ struct Matrix {
                              Matrix3d& matrix);
 
     // 打印二维矩阵
+    static void MatrixShow(const Matrix1d& matrix);
+
+    // 打印二维矩阵
     static void MatrixShow(const Matrix2d& matrix);
     
     // 打印三维矩阵
@@ -229,25 +236,75 @@ struct Matrix {
                            const Matrix3d& right_matrix, 
                            Matrix3d& result_matrix);
 
-    // 2d矩阵reshape 成几行几列  
+    // 2d矩阵reshape 成1d矩阵  
+    static int8_t Reshape(const Matrix2d& source_matrix,
+                          Matrix1d& result_matrix);
+
+    // 2d矩阵reshape 成1d矩阵  
+    static int8_t Reshape(const Matrix2d& source_matrix,
+                          int32_t& rows, int32_t& cols, 
+                          Matrix1d& result_matrix);
+
+    // 2个2d矩阵reshape 成2个1d矩阵  
+    static int8_t Reshape(const Matrix2d& left_matrix,
+                          const Matrix2d& right_matrix, 
+                          int32_t& rows, int32_t& cols, 
+                          Matrix1d& result_left_matrix, 
+                          Matrix1d& result_right_matrix); 
+
+    // 2个2d矩阵reshape 成2个1d矩阵  
+    static int8_t Reshape(const Matrix2d& left_matrix,
+                          const Matrix2d& right_matrix, 
+                          int32_t& left_rows, int32_t& left_cols, 
+                          int32_t& right_cols, 
+                          Matrix1d& result_left_matrix, 
+                          Matrix1d& result_right_matrix); 
+
+    // 3d矩阵reshape 成1d矩阵  
+    static int8_t Reshape(const Matrix3d& source_matrix,
+                          Matrix1d& result_matrix);
+
+    // 3d矩阵reshape 成1d矩阵  
+    static int8_t Reshape(const Matrix3d& source_matrix,
+                          int32_t& depth, int32_t& height, 
+                          int32_t& width, 
+                          Matrix1d& result_matrix);
+
+    // 2个3d矩阵reshape 成2个1d矩阵  
+    static int8_t Reshape(const Matrix3d& left_matrix,
+                          const Matrix3d& right_matrix, 
+                          int32_t& depth, int32_t& height, 
+                          int32_t& width, 
+                          Matrix1d& result_left_matrix, 
+                          Matrix1d& result_right_matrix); 
+    
+    // 1d矩阵reshape 成2d矩阵
+    static int8_t Reshape(const Matrix1d& source_matrix,
+                          int32_t rows, int32_t cols, 
+                          Matrix2d& result_matrix);
+
+    // 1d矩阵reshape 成3d矩阵
+    static int8_t Reshape(const Matrix1d& source_matrix,
+                          int32_t depth, int32_t height, 
+                          int32_t width, 
+                          Matrix3d& result_matrix);
+
+    // 2d矩阵reshape 成2d矩阵 
     static int8_t Reshape(const Matrix2d& source_matrix,
                           int32_t rows, int32_t cols, 
                           Matrix2d& result_matrix);
 
-    // 3d矩阵reshape 成几行几列  
+    // 2d矩阵reshape 成3d矩阵  
+    static int8_t Reshape(const Matrix2d& source_matrix,
+                          int32_t depth, int32_t height, 
+                          int32_t width, 
+                          Matrix3d& result_matrix);
+
+    // 3d矩阵reshape 成2d矩阵  
     static int8_t Reshape(const Matrix3d& source_matrix,
                           int32_t rows, int32_t cols, 
                           Matrix2d& result_matrix);
 
-    // 3d矩阵reshape 成几行几列  
-    static int8_t Reshape(const Matrix2d& source_matrix,
-                          int32_t depth, int32_t height, 
-                          int32_t width, Matrix3d& result_matrix);
-
-    // 矩阵reshape 一维矩阵转二维矩阵版
-    static int8_t Reshape(const Matrix1d& source_matrix,
-                          int32_t rows, int32_t cols, 
-                          Matrix2d& result_matrix);
 
     // 2维矩阵的装置矩阵
     static int8_t Transpose(const Matrix2d& source_matrix, 
@@ -267,6 +324,11 @@ struct Matrix {
     static int8_t ValueSubMatrix(DataType value,  
                                  const Matrix2d& source_matrix, 
                                  Matrix2d& result_matrix);
+
+    // 1个值 减去 一个3d矩阵
+    static int8_t ValueSubMatrix(DataType value,  
+                                 const Matrix3d& source_matrix, 
+                                 Matrix3d& result_matrix);
 
     // 一个2d矩阵 同除以 一个值
     static int8_t MatrixDivValue(const Matrix2d& source_matrix, 
@@ -382,6 +444,7 @@ struct Matrix {
                               Matrix2d& result_matrix,
                               double bias = 0.0, 
                               int32_t stride = 1);
+    
     //2d矩阵卷积运算
     static int8_t Convolution(const std::vector<std::vector<uint8_t>>& source_matrix, 
                               const std::vector<std::vector<double>>& filter_matrix, 
@@ -400,13 +463,13 @@ struct Matrix {
     static int8_t Flip(const Matrix3d& source_matrix, 
                        Matrix3d& result_matrix);
 
-    
     //2d矩阵最大池化前向运算 
     static int8_t MaxPoolingForward(const Matrix2d& source_matrix, 
                                     int32_t filter_height, 
                                     int32_t filter_width, 
                                     int32_t stride, 
                                     Matrix2d& result_matrix); 
+
     //2d矩阵最大池化反向运算 
     static int8_t MaxPoolingBackward(const Matrix2d& source_matrix, 
                                      const Matrix2d& sensitivity_matrix, 
@@ -455,7 +518,18 @@ struct Matrix {
 
 
 
+// 检查1d源矩阵或 结果矩阵是否正确  是源矩阵就打印日志 结果矩阵就不打印日志 
+template <typename DataType>
+bool Matrix<DataType>::MatrixCheck(const Matrix1d& matrix, 
+                                   bool is_write_logging) {
+    if (0 == matrix.size()) {
+        LOG_IF(ERROR, is_write_logging) << "matrix check failed, input matrix is empty";
+        return false;
+    }
 
+    return true;
+}
+                                
 // 检查2d源矩阵或 结果矩阵行 列是否正确  是源矩阵就打印日志 结果矩阵就不打印日志 
 template <typename DataType>
 bool Matrix<DataType>::MatrixCheck(const std::vector<std::vector<uint8_t>>& matrix, 
@@ -1255,6 +1329,49 @@ int8_t Matrix<DataType>::CreateOnes(const std::tuple<int32_t, int32_t, int32_t>&
     return 0;
 }
 
+//打印一维矩阵
+template <typename DataType>
+void Matrix<DataType>::MatrixShow(const Matrix1d& matrix) {
+    //check 源矩阵
+    if (!MatrixCheck(matrix, true)) {
+        LOG(ERROR) << "print matrix failed";
+        return ;
+    }
+
+    std::cout << "源矩阵size: " << matrix.size(); 
+    for (int i = 0; i < matrix.size(); i++) {
+        if (0 == i) {
+            std::cout << "  [";
+        }
+
+        //如果是负数 则会多占一格 那么是正数 就多加个空格
+        //设置浮点的格式 后面6位
+        int space_number = 0;
+        if (matrix[i] >= 0) {
+            if ((matrix[i] / 10.0) < 1.0) {
+                space_number = 3;
+            } else {
+                space_number = 2;
+            }
+        } else {
+            if ((matrix[i] / 10.0) < 1.0) {
+                space_number = 2;
+            } else {
+                space_number = 1;
+            }
+        }
+
+        std::cout << std::showpoint << std::setiosflags(std::ios::fixed)
+                  << std::setprecision(16) << std::string(space_number, ' ')
+                      << matrix[i];
+            
+        if ((i + 1) == matrix.size()) {
+                std::cout << "  ]" << std::endl;
+        }
+    }
+    std::cout << std::endl;
+}
+
 //打印二维矩阵
 template <typename DataType>
 void Matrix<DataType>::MatrixShow(const Matrix2d& matrix) {
@@ -1822,12 +1939,15 @@ int8_t Matrix<DataType>::Subtract(const Matrix3d& left_matrix,
     return 0;
 }
 
-
-//matrix reshape  把原2d矩阵变成 几行几列
+//2d reshape 1d
 template <typename DataType>
 int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
-                                 int32_t rows, int32_t cols, 
-                                 Matrix2d& result_matrix) {
+                                 Matrix1d& result_matrix) {
+    //check source matrix
+    int rows;
+    int cols;
+    auto shape = GetShape(source_matrix);
+    std::tie(rows, cols) = shape;
     if (rows <= 0) {
         LOG(ERROR) << "reshape matrix failed, input rows <= 0";
         return -1;
@@ -1836,116 +1956,163 @@ int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
         LOG(ERROR) << "reshape matrix failed, input cols <= 0";
         return -1;
     }
-    
-    //check一下源矩阵
-    if (!MatrixCheck(source_matrix, true)) {
-        LOG(ERROR) << "reshape matrix failed";
-        return -1;
-    }
 
-    //检查输入矩阵的总数量 是否等于 要reshape的总量
-    int matrix_total_size = 0;
-    for (int i = 0; i < source_matrix.size(); i++) {
-        matrix_total_size += source_matrix[i].size();
-    }
-    
-    if (matrix_total_size != (rows * cols)) {
-        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
-        return -1;
-    }
-
-    //先把值放入一个一维数组
-    Matrix1d matrix_data(matrix_total_size);
-    int index = 0;
-    for (int i = 0; i < source_matrix.size(); i++) {
-        for (int j = 0; j < source_matrix[i].size(); j++) {
-            matrix_data[index++] = source_matrix[i][j];
-        }
-    }
-    
-    //check一下输出数组
-    if (!MatrixCheck(source_matrix, result_matrix, false)) {
-        result_matrix.clear();
-        result_matrix = source_matrix;
-    }
-    
-    index = 0;
-    //reshape 把一维数组值赋给新数组  
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            result_matrix[i][j] = matrix_data[index++];    
-        }
-    }
-
-    return 0;
-}
-
-//matrix reshape  把原3d矩阵变成 几行几列
-template <typename DataType>
-int8_t Matrix<DataType>::Reshape(const Matrix3d& source_matrix,
-                                 int32_t rows, int32_t cols, 
-                                 Matrix2d& result_matrix) {
-    if (rows <= 0) {
-        LOG(ERROR) << "reshape matrix failed, input rows <= 0";
-        return -1;
-    }
-    if (cols <= 0) {
-        LOG(ERROR) << "reshape matrix failed, input cols <= 0";
-        return -1;
-    }
-    
-    //check一下源矩阵
-    if (!MatrixCheck(source_matrix, true)) {
-        LOG(ERROR) << "reshape matrix failed";
-        return -1;
-    }
-
-    //检查输入矩阵的总数量 是否等于 要reshape的总量
-    int matrix_total_size = 0;
-    for (int i = 0; i < source_matrix.size(); i++) {
-        for (int j = 0; j < source_matrix[i].size(); j++) {
-            matrix_total_size += source_matrix[i][j].size();
-        }
-    }
-    
-    if (matrix_total_size != (rows * cols)) {
-        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
-        return -1;
-    }
-
-    //先把值放入一个一维数组
-    Matrix1d matrix_data(matrix_total_size);
-    int index = 0;
-    for (int i = 0; i < source_matrix.size(); i++) {
-        for (int j = 0; j < source_matrix[i].size(); j++) {
-            for (int k = 0; k < source_matrix[i][j].size(); k++) {
-                matrix_data[index++] = source_matrix[i][j][k];
+    //初始化结果矩阵
+    result_matrix = Matrix1d(rows * cols);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result_matrix[i * cols + j] = source_matrix[i][j];    
             }
         }
     }
     
-    //check一下输出数组
-    if (!MatrixCheck(result_matrix, rows, cols, false)) {
-        result_matrix.clear();
-        result_matrix = Matrix2d(rows, Matrix1d(cols));
+    return 0;
+}
+
+//2d reshape 1d
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
+                                 int32_t& rows, int32_t& cols, 
+                                 Matrix1d& result_matrix) {
+    //check source matrix
+    auto shape = GetShape(source_matrix);
+    std::tie(rows, cols) = shape;
+    if (rows <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input rows <= 0";
+        return -1;
+    }
+    if (cols <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input cols <= 0";
+        return -1;
+    }
+
+    //初始化结果矩阵
+    result_matrix = Matrix1d(rows * cols);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result_matrix[i * cols + j] = source_matrix[i][j];    
+            }
+        }
     }
     
-    index = 0;
-    //reshape 把一维数组值赋给新数组  
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            result_matrix[i][j] = matrix_data[index++];    
+    return 0;
+}
+
+// 2个2d矩阵reshape 成2个1d矩阵  
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix2d& left_matrix,
+                                 const Matrix2d& right_matrix, 
+                                 int32_t& rows, int32_t& cols, 
+                                 Matrix1d& result_left_matrix, 
+                                 Matrix1d& result_right_matrix) { 
+    //check left matrix
+    auto shape = GetShape(left_matrix);
+    std::tie(rows, cols) = shape;
+    if (rows <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input rows <= 0";
+        return -1;
+    }
+    if (cols <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input cols <= 0";
+        return -1;
+    }
+
+    //check left matrix and right matrix 
+    if (!MatrixCheck(left_matrix, right_matrix, true)) {
+        LOG(ERROR) << "reshape matrix failed, two input matrices is not equal";
+        return -1;
+    }
+
+    //初始化结果矩阵
+    result_left_matrix = Matrix1d(rows * cols);
+    result_right_matrix = Matrix1d(rows * cols);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result_left_matrix[i * cols + j] = left_matrix[i][j];    
+                result_right_matrix[i * cols + j] = right_matrix[i][j];    
+            }
         }
     }
 
     return 0;
 }
 
-//matrix reshape  把原2d矩阵变成 几通道几行几列
+// 2个2d矩阵reshape 成2个1d矩阵  
 template <typename DataType>
-int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
-                                 int32_t depth, int32_t height,
-                                 int32_t width, Matrix3d& result_matrix) {
+int8_t Matrix<DataType>::Reshape(const Matrix2d& left_matrix,
+                                 const Matrix2d& right_matrix, 
+                                 int32_t& left_rows, int32_t& left_cols,
+                                 int32_t& right_cols, 
+                                 Matrix1d& result_left_matrix, 
+                                 Matrix1d& result_right_matrix) { 
+    //check left matrix
+    auto shape = GetShape(left_matrix);
+    std::tie(left_rows, left_cols) = shape;
+    if (left_rows <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input left rows <= 0";
+        return -1;
+    }
+    if (left_cols <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input left cols <= 0";
+        return -1;
+    }
+
+    //check right matrix 
+    shape = GetShape(right_matrix);
+    int right_rows;
+    std::tie(right_rows, right_cols) = shape;
+    if (right_rows <= 0
+            || right_rows != left_cols) {
+        LOG(ERROR) << "reshape matrix failed, input right rows <= 0 or right rows is not equal left cols";
+        return -1;
+    }
+    if (right_cols <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input right cols <= 0";
+        return -1;
+    }
+
+    //初始化结果矩阵
+    result_left_matrix = Matrix1d(left_rows * left_cols);
+    result_right_matrix = Matrix1d(right_rows * right_cols);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < left_rows; i++) {
+            for (int j = 0; j < left_cols; j++) {
+                result_left_matrix[i * left_cols + j] = left_matrix[i][j];    
+            }
+        }
+
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < right_rows; i++) {
+            for (int j = 0; j < right_cols; j++) {
+                result_right_matrix[i * right_cols + j] = right_matrix[i][j];    
+            }
+        }
+    }
+
+    return 0;
+}
+
+//3d reshape 1d
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix3d& source_matrix,
+                                 Matrix1d& result_matrix) {
+    //check source matrix
+    int depth;
+    int height;
+    int width;
+    auto shape = GetShape(source_matrix);
+    std::tie(depth, height, width) = shape;
     if (depth <= 0) {
         LOG(ERROR) << "reshape matrix failed, input channel number <= 0";
         return -1;
@@ -1958,45 +2125,107 @@ int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
         LOG(ERROR) << "reshape matrix failed, input width <= 0";
         return -1;
     }
-    
-    //check一下源矩阵
-    if (!MatrixCheck(source_matrix, true)) {
-        LOG(ERROR) << "reshape matrix failed";
-        return -1;
-    }
 
-    //检查输入矩阵的总数量 是否等于 要reshape的总量
-    int matrix_total_size = 0;
-    for (int i = 0; i < source_matrix.size(); i++) {
-        matrix_total_size += source_matrix[i].size();
-    }
-    
-    if (matrix_total_size != (depth * height * width)) {
-        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
-        return -1;
-    }
-
-    //先把值放入一个一维数组
-    Matrix1d matrix_data(matrix_total_size);
-    int index = 0;
-    for (int i = 0; i < source_matrix.size(); i++) {
-        for (int j = 0; j < source_matrix[i].size(); j++) {
-            matrix_data[index++] = source_matrix[i][j];
+    //初始化结果矩阵
+    result_matrix = Matrix1d(depth * height * width);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < depth; i++) {
+            for (int j = 0; j < height; j++) {
+                for (int k = 0; k < width; k++) {
+                    result_matrix[i * (height * width) + (j * width) + k] = source_matrix[i][j][k];    
+                }
+            }
         }
     }
     
-    //check一下输出数组
-    if (!MatrixCheck(result_matrix, depth, height, width, false)) {
-        result_matrix.clear();
-        result_matrix = Matrix3d(depth, Matrix2d(height, Matrix1d(width)));
+    return 0;
+}
+
+//3d reshape 1d
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix3d& source_matrix,
+                                 int32_t& depth, int32_t& height,
+                                 int32_t& width, 
+                                 Matrix1d& result_matrix) {
+    //check source matrix
+    auto shape = GetShape(source_matrix);
+    std::tie(depth, height, width) = shape;
+    if (depth <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input channel number <= 0";
+        return -1;
+    }
+    if (height <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input height <= 0";
+        return -1;
+    }
+    if (width <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input width <= 0";
+        return -1;
+    }
+
+    //初始化结果矩阵
+    result_matrix = Matrix1d(depth * height * width);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < depth; i++) {
+            for (int j = 0; j < height; j++) {
+                for (int k = 0; k < width; k++) {
+                    result_matrix[i * (height * width) + (j * width) + k] = source_matrix[i][j][k];    
+                }
+            }
+        }
     }
     
-    index = 0;
-    //reshape 把一维数组值赋给新数组  
-    for (int i = 0; i < depth; i++) {
-        for (int j = 0; j < height; j++) {
-            for (int k = 0; k < width; k++) {
-                result_matrix[i][j][k] = matrix_data[index++];    
+    return 0;
+}
+
+// 2个3d矩阵reshape 成2个1d矩阵  
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix3d& left_matrix,
+                                 const Matrix3d& right_matrix, 
+                                 int32_t& depth, int32_t& height,
+                                 int32_t& width, 
+                                 Matrix1d& result_left_matrix, 
+                                 Matrix1d& result_right_matrix) {
+    //check left matrix
+    auto shape = GetShape(left_matrix);
+    std::tie(depth, height, width) = shape;
+    if (depth <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input channel number <= 0";
+        return -1;
+    }
+    if (height <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input height <= 0";
+        return -1;
+    }
+    if (width <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input width <= 0";
+        return -1;
+    }
+
+    //check left matrix and right matrix 
+    if (!MatrixCheck(left_matrix, right_matrix, true)) {
+        LOG(ERROR) << "reshape matrix failed, two input matrices is not equal";
+        return -1;
+    }
+
+    //初始化结果矩阵
+    result_left_matrix = Matrix1d(depth * height * width);
+    result_right_matrix = Matrix1d(depth * height * width);
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < depth; i++) {
+            for (int j = 0; j < height; j++) {
+                for (int k = 0; k < width; k++) {
+                    result_left_matrix[i * (height * width) + (j * width) + k] = 
+                                                                    left_matrix[i][j][k];    
+                    result_right_matrix[i * (height * width) + (j * width) + k] = 
+                                                                    right_matrix[i][j][k];    
+                }
             }
         }
     }
@@ -2004,8 +2233,7 @@ int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
     return 0;
 }
 
-
-//接收输入矩阵为1维矩阵 函数重载
+//1d矩阵 reshape成2d矩阵
 template <typename DataType>
 int8_t Matrix<DataType>::Reshape(const Matrix1d& source_matrix,
                                  int32_t rows, int32_t cols, 
@@ -2033,19 +2261,211 @@ int8_t Matrix<DataType>::Reshape(const Matrix1d& source_matrix,
         return -1;
     }
     
-    result_matrix.clear();
-    result_matrix = Matrix2d(rows, Matrix1d(cols));
+    if (!MatrixCheck(result_matrix, rows, cols, false)) {
+        result_matrix = Matrix2d(rows, Matrix1d(cols));
+    }
 
-    int index = 0;
-    //再赋值给新数组
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            result_matrix[i][j] = source_matrix[index++];    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        //再赋值给新数组
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result_matrix[i][j] = source_matrix[i * cols + j];    
+            }
         }
     }
 
     return 0;
 }
+
+//1d矩阵 reshape成3d矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix1d& source_matrix,
+                                 int32_t depth, int32_t height,
+                                 int32_t width, 
+                                 Matrix3d& result_matrix) {
+    if (depth <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input channel number <= 0";
+        return -1;
+    }
+    if (height <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input height <= 0";
+        return -1;
+    }
+    if (width <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input width <= 0";
+        return -1;
+    }
+
+    //check 源矩阵
+    if (0 == source_matrix.size()) {
+        LOG(ERROR) << "reshape matrix failed, input matrix is empty";
+        return -1;
+    }
+
+    //检查输入矩阵的总数量 是否等于 要reshape的总量
+    int matrix_total_size = source_matrix.size();
+    
+    if (matrix_total_size != (depth * height * width)) {
+        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
+        return -1;
+    }
+
+    if (!MatrixCheck(result_matrix, depth, height, width, false)) {
+        result_matrix = Matrix3d(depth, Matrix2d(height, Matrix1d(width)));
+    }
+
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < depth; i++) {
+            for (int j = 0; j < height; j++) {
+                for (int k = 0; k < width; k++) {
+                    result_matrix[i][j][k] = source_matrix[i * (height * width) + (j * width) + k]; 
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+// 2d矩阵reshape 成2d矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
+                                 int32_t rows, int32_t cols, 
+                                 Matrix2d& result_matrix) {
+    if (rows <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input rows <= 0";
+        return -1;
+    }
+    if (cols <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input cols <= 0";
+        return -1;
+    }
+    
+    Matrix1d matrix_data;
+    Reshape(source_matrix, matrix_data);
+
+    //检查输入矩阵的总数量 是否等于 要reshape的总量
+    int matrix_total_size = matrix_data.size();
+    
+    if (matrix_total_size != (rows * cols)) {
+        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
+        return -1;
+    }
+
+    //check一下输出数组
+    if (!MatrixCheck(result_matrix, rows, cols, false)) {
+        result_matrix = Matrix2d(rows, Matrix1d(cols));
+    }
+    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result_matrix[i][j] = matrix_data[i * cols + j];    
+            }
+        }
+    }
+
+    return 0;
+}
+
+// 3d矩阵reshape 成2d矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix3d& source_matrix,
+                                 int32_t rows, int32_t cols, 
+                                 Matrix2d& result_matrix) {
+    if (rows <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input rows <= 0";
+        return -1;
+    }
+    if (cols <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input cols <= 0";
+        return -1;
+    }
+    
+    Matrix1d matrix_data;
+    Reshape(source_matrix, matrix_data);
+
+    //检查输入矩阵的总数量 是否等于 要reshape的总量
+    int matrix_total_size = matrix_data.size();
+    
+    if (matrix_total_size != (rows * cols)) {
+        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
+        return -1;
+    }
+
+    //check一下输出数组
+    if (!MatrixCheck(result_matrix, rows, cols, false)) {
+        result_matrix = Matrix2d(rows, Matrix1d(cols));
+    }
+    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result_matrix[i][j] = matrix_data[i * cols + j];    
+            }
+        }
+    }
+
+    return 0;
+}
+
+// 2d矩阵reshape 成3d矩阵
+template <typename DataType>
+int8_t Matrix<DataType>::Reshape(const Matrix2d& source_matrix,
+                                 int32_t depth, int32_t height,
+                                 int32_t width, Matrix3d& result_matrix) {
+    if (depth <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input channel number <= 0";
+        return -1;
+    }
+    if (height <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input height <= 0";
+        return -1;
+    }
+    if (width <= 0) {
+        LOG(ERROR) << "reshape matrix failed, input width <= 0";
+        return -1;
+    }
+
+    Matrix1d matrix_data;
+    Reshape(source_matrix, matrix_data);
+    
+    //检查输入矩阵的总数量 是否等于 要reshape的总量
+    int matrix_total_size = matrix_data.size();
+    
+    if (matrix_total_size != (depth * height * width)) {
+        LOG(ERROR) << "matrix reshape failed, input matrix couldn't reshape become that shape";
+        return -1;
+    }
+
+    //check一下输出数组
+    if (!MatrixCheck(result_matrix, depth, height, width, false)) {
+        result_matrix = Matrix3d(depth, Matrix2d(height, Matrix1d(width)));
+    }
+    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < depth; i++) {
+            for (int j = 0; j < height; j++) {
+                for (int k = 0; k < width; k++) {
+                    result_matrix[i][j][k] = matrix_data[i * (height * width) + (j * width) + k]; 
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 
 //转置矩阵
 template <typename DataType>
@@ -2181,6 +2601,38 @@ int8_t Matrix<DataType>::ValueSubMatrix(DataType value,
         for (int i = 0; i < source_matrix.size(); i++) {
             for (int j = 0; j < source_matrix[i].size(); j++) {
                 result_matrix[i][j] = value - source_matrix[i][j];
+            }
+        }
+    }
+
+    return 0;
+}
+
+//一个值减去矩阵每个值
+template <typename DataType>
+int8_t Matrix<DataType>::ValueSubMatrix(DataType value,  
+                                        const Matrix3d& source_matrix, 
+                                        Matrix3d& result_matrix) {
+    //check源矩阵
+    if (!MatrixCheck(source_matrix, true)) {
+        LOG(ERROR) << "value sub matrix failed";
+        return -1;
+    }
+
+    //check结果矩阵
+    if (!MatrixCheck(source_matrix, result_matrix, false)) {
+        result_matrix.clear();
+        result_matrix = source_matrix;
+    } 
+
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < source_matrix.size(); i++) {
+            for (int j = 0; j < source_matrix[i].size(); j++) {
+                for (int k = 0; k < source_matrix[i][j].size(); k++) {
+                    result_matrix[i][j][k] = value - source_matrix[i][j][k];
+                }
             }
         }
     }
@@ -4330,4 +4782,4 @@ typedef calculate::random::Random<uint8_t> ImageRandom;
 typedef calculate::activator::Activator<uint8_t> ImageActivator;
 
 
-#endif    //CALCULATE_MATRIX_HPP_
+#endif    //CALCULATE_MATRIX_CPU_HPP__
