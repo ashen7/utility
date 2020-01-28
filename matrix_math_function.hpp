@@ -478,8 +478,18 @@ struct Matrix {
                                      int32_t stride, 
                                      Matrix2d& result_matrix); 
 
-    
+    //计算神经网络的输出层误差项
+    static int8_t CalcDiff(const Matrix2d& output_array, 
+                           const Matrix2d& label, 
+                           Matrix2d& delta_array);
 
+    //梯度下降优化算法
+    static int8_t GradientDescent(const Matrix2d& weights_gradient_array, 
+                                  const Matrix2d& biases_gradient_array,
+                                  double learning_rate, 
+                                  int32_t batch_size, 
+                                  Matrix2d& weights_array, 
+                                  Matrix2d& biases_array);
 
 
 
@@ -3940,9 +3950,72 @@ int8_t Matrix<DataType>::MaxPoolingBackward(const Matrix2d& source_matrix,
     return 0;
 }
 
+//计算神经网络的输出层误差项
+template <typename DataType>
+int8_t Matrix<DataType>::CalcDiff(const Matrix2d& output_array, 
+                                  const Matrix2d& label, 
+                                  Matrix2d& delta_array) {
+    //check source matrix
+    if (!MatrixCheck(output_array, label, true)) {
+        LOG(ERROR) << "calc diff failed";
+        return -1;
+    }
+    
+    if (!MatrixCheck(output_array, delta_array, false)) {
+        delta_array = output_array;
+    }
+    
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < output_array.size(); i++) {
+            for (int j = 0; j < output_array[i].size(); j++) {
+                delta_array[i][j] = output_array[i][j] * 
+                                    (1.0 - output_array[i][j]) *
+                                    (label[i][j] - output_array[i][j]);    
+            }
+        }
+    }
+    
+    return 0;
+}
 
+//梯度下降优化算法
+template <typename DataType>
+int8_t Matrix<DataType>::GradientDescent(const Matrix2d& weights_gradient_array, 
+                                         const Matrix2d& biases_gradient_array,
+                                         double learning_rate, 
+                                         int32_t batch_size, 
+                                         Matrix2d& weights_array, 
+                                         Matrix2d& biases_array) {
+    //check source matrix and result
+    if (0 == weights_gradient_array.size() 
+            || 0 == biases_gradient_array.size()
+            || 0 == weights_array.size()
+            || 0 == biases_array.size()) {
+        LOG(ERROR) << "gradient descent failed, input source matrix is empty";
+        return -1;
+    }
 
+#pragma omp parallel num_threads(OPENMP_THREADS_NUMBER)
+    {
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < weights_gradient_array.size(); i++) {
+            for (int j = 0; j < weights_gradient_array[i].size(); j++) {
+                weights_array[i][j] += weights_gradient_array[i][j] / batch_size * learning_rate; 
+            }
+        }
 
+        #pragma omp for schedule(static) 
+        for (int i = 0; i < biases_gradient_array.size(); i++) {
+            for (int j = 0; j < biases_gradient_array[i].size(); j++) {
+                biases_array[i][j] += biases_gradient_array[i][j] / batch_size * learning_rate; 
+            }
+        }
+    }
+
+    return 0;
+}
 
 
 
