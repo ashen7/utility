@@ -23,6 +23,9 @@
 #include <stdint.h>
 
 #include <vector>
+#include <memory>
+#include <map>
+#include <tuple>
 
 namespace calculate {
 namespace cuda {
@@ -154,6 +157,41 @@ int ReLuBackward3d(const Matrix3d& source_matrix,
 //ReLu激活函数的反向计算
 int ReLuImageBackward3d(const ImageMatrix3d& source_matrix, 
                         Matrix3d& result_matrix);
+
+//全连接层的前向计算
+int FullConnectedLayerForward(const Matrix2d& weights_array, 
+                              const Matrix2d& input_array, 
+                              const Matrix2d& biases_array,
+                              Matrix2d& binomial_array, 
+                              Matrix2d& output_array, 
+                              bool is_input_layer = false,  
+                              bool dropout = false, double p = 0.0); 
+
+//全连接层的前向计算
+int FullConnectedLayerForward(const Matrix2d& weights_array, 
+                              const Matrix2d& input_array, 
+                              const Matrix2d& biases_array,
+                              Matrix2d& output_array, 
+                              bool is_input_layer = false);  
+
+//全连接层的反向计算
+int FullConnectedLayerBackward(const Matrix2d& output_delta_array, 
+                               const Matrix2d& weights_array, 
+                               const Matrix2d& input_array,
+                               const Matrix2d& binomial_array, 
+                               Matrix2d& delta_array, 
+                               Matrix2d& weights_gradient_array, 
+                               Matrix2d& biases_gradient_array, 
+                               bool is_input_layer =false, 
+                               bool dropout = false, double p = 0.0); 
+
+//全连接层的反向计算
+int FullConnectedLayerBackward(const Matrix2d& output_delta_array, 
+                               const Matrix2d& weights_array, 
+                               const Matrix2d& input_array,
+                               Matrix2d& delta_array, 
+                               Matrix2d& weights_gradient_array, 
+                               Matrix2d& biases_gradient_array); 
 
 
 
