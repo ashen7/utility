@@ -15,8 +15,8 @@
  *
  * =====================================================================================
  */
-#ifndef UTILITY_NORMALIZER_HPP_
-#define UTILITY_NORMALIZER_HPP_
+#ifndef MOON_UTILITY_NORMALIZER_HPP_
+#define MOON_UTILITY_NORMALIZER_HPP_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -25,6 +25,7 @@
 
 #include "matrix_math_function.hpp"
 
+namespace moon {
 namespace utility {
 //归一化
 class Normalizer {
@@ -79,9 +80,11 @@ void Normalizer::Normalize(uint8_t number, size_t rows, size_t cols,
     for (int i = 0; i < rows * cols; i++) {
         //如果值等于结果值 那个地方就是0.9 否则就是0.1
         if (number == i) {
-            data.push_back(0.9);
+            //data.push_back(0.9);
+            data.push_back(1.0);
         } else {
-            data.push_back(0.1);
+            //data.push_back(0.1);
+            data.push_back(0.0);
         }
     }
     
@@ -112,5 +115,6 @@ uint8_t Normalizer::Denormalize(const std::vector<std::vector<double>>& model_pr
 }
 
 }        //namespace utility
+}        //namespace moon
 
-#endif   //UTILITY_NORMALIZER_HPP_
+#endif   //MOON_UTILITY_NORMALIZER_HPP_

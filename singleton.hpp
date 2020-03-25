@@ -15,10 +15,11 @@
  *
  * =====================================================================================
  */
-#ifndef UTILITY_SINGLETON_HPP_
-#define UTILITY_SINGLETON_HPP_
+#ifndef MOON_UTILITY_SINGLETON_HPP_
+#define MOON_UTILITY_SINGLETON_HPP_
 
 //单例模式 懒汉式
+namespace moon {
 namespace utility {
 
 template <typename T>
@@ -57,5 +58,6 @@ template <typename T>
 typename Singleton<T>::CreateObject Singleton<T>::create_object;
 
 }        //namespace utility
+}        //namespace moon
 
-#endif   //UTILITY_SINGLETON_HPP_
+#endif   //MOON_UTILITY_SINGLETON_HPP_
